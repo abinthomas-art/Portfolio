@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <!-- Use existing styles from the main portfolio index.css -->
+    <link rel="stylesheet" href="index.css">
+    <style>
+        .admin-container {
+            max-width: 1000px;
+            margin: 5rem auto;
+            padding: 0 20px;
+        }
+
+        .admin-card {
+            background-color: var(--second-bg-color, #111);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            max-width: 400px;
+            margin: 0 auto;
+            border: 2px solid var(--main-color, #0ef);
+        }
+
+        .admin-card h2 {
+            text-align: center;
+            color: var(--text-color, #fff);
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-color, #fff);
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            background-color: var(--bg-color, #000);
+            border: 1px solid var(--second-bg-color, #111);
+            border-radius: 5px;
+            color: var(--text-color, #fff);
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--main-color, #0ef);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--main-color, #0ef);
+            color: var(--bg-color, #000);
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            box-shadow: 0 0 10px var(--main-color, #0ef);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-header h2 {
+            font-size: 2rem;
+            margin-bottom: 0;
+            color: var(--main-color, #0ef);
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background-color: transparent;
+            color: var(--main-color, #0ef);
+            border: 2px solid var(--main-color, #0ef);
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .logout-btn:hover {
+            background-color: var(--main-color, #0ef);
+            color: var(--bg-color, #000);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            background-color: var(--second-bg-color, #111);
+            border-radius: 10px;
+            padding: 1rem;
+            border: 1px solid var(--main-color, #0ef);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            color: var(--text-color, #fff);
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--bg-color, #000);
+        }
+
+        th {
+            background-color: var(--bg-color, #000);
+            color: var(--main-color, #0ef);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        td a {
+            color: var(--main-color, #0ef);
+            text-decoration: none;
+        }
+
+        td a:hover {
+            text-decoration: underline;
+        }
+
+        .error-msg {
+            color: #ff4d4d;
+            background-color: rgba(255, 77, 77, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            display: none;
+            text-align: center;
+        }
+
+        .loading-msg {
+            text-align: center;
+            margin: 2rem 0;
+            font-style: italic;
+            color: var(--main-color, #0ef);
+            display: none;
+        }
+
+        /* Mobile responsive adjustments */
+        @media (max-width: 768px) {
+            .dashboard-header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-container">
+        <!-- Login Section -->
+        <div id="login-section" class="admin-card">
+            <h2>Admin Login</h2>
+            <form id="admin-login-form">
+                <div class="form-group">
+                    <label for="admin-email">Authorized Email</label>
+                    <input type="email" id="admin-email" required placeholder="admin@example.com" />
+                </div>
+                <div class="form-group">
+                    <label for="admin-password">Password</label>
+                    <input type="password" id="admin-password" required placeholder="Password" />
+                </div>
+                <div id="login-error" class="error-msg"></div>
+                <button type="submit" class="submit-btn">Login to Dashboard</button>
+            </form>
+        </div>
+
+        <!-- Dashboard Section (Hidden by Default) -->
+        <div id="dashboard-section" class="hidden">
+            <div class="dashboard-header">
+                <h2>Feedback Submissions</h2>
+                <button id="logout-btn" class="logout-btn">Logout</button>
+            </div>
+
+            <div class="table-container">
+                <table id="feedback-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Comment</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="feedback-tbody">
+                        <!-- Content goes here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="loading" class="loading-msg">Loading data...</div>
+            <div id="error-msg" class="error-msg"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('admin-login-form');
+            const loginSection = document.getElementById('login-section');
+            const dashboardSection = document.getElementById('dashboard-section');
+            const loginError = document.getElementById('login-error');
+            const logoutBtn = document.getElementById('logout-btn');
+            const feedbackTbody = document.getElementById('feedback-tbody');
+            const loadingMsg = document.getElementById('loading');
+            const errorMsg = document.getElementById('error-msg');
+
+            // API URL fallback for local development vs hosted backend.
+            const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                ? 'http://localhost:3000/api'
+                : 'https://your-backend.onrender.com/api';
+
+            // Check if user is already logged in for this session
+            if (sessionStorage.getItem('adminToken')) {
+                showDashboard();
+            }
+
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const email = document.getElementById('admin-email').value;
+                const password = document.getElementById('admin-password').value;
+
+                loginError.style.display = 'none';
+
+                try {
+                    const response = await fetch(`${API_URL}/admin/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.success) {
+                        sessionStorage.setItem('adminToken', data.token);
+                        showDashboard();
+                    } else {
+                        loginError.textContent = data.error || 'Invalid credentials.';
+                        loginError.style.display = 'block';
+                    }
+                } catch (err) {
+                    console.error('Login error:', err);
+                    loginError.textContent = 'An error occurred while logging in.';
+                    loginError.style.display = 'block';
+                }
+            });
+
+            logoutBtn.addEventListener('click', () => {
+                sessionStorage.removeItem('adminToken');
+                dashboardSection.classList.add('hidden');
+                loginSection.classList.remove('hidden');
+                feedbackTbody.innerHTML = '';
+                loginForm.reset();
+            });
+
+            async function showDashboard() {
+                // Hide login, show dashboard skeleton
+                loginSection.classList.add('hidden');
+                dashboardSection.classList.remove('hidden');
+                loadingMsg.style.display = 'block';
+                errorMsg.style.display = 'none';
+                feedbackTbody.innerHTML = '';
+
+                const token = sessionStorage.getItem('adminToken');
+
+                try {
+                    const response = await fetch(`${API_URL}/admin/feedback`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        renderTable(data);
+                        loadingMsg.style.display = 'none';
+                    } else {
+                        throw new Error(data.error || 'Failed to fetch feedback.');
+                    }
+                } catch (err) {
+                    console.error('Fetch error:', err);
+                    loadingMsg.style.display = 'none';
+                    errorMsg.textContent = err.message || 'Session expired. Please login again.';
+                    errorMsg.style.display = 'block';
+                    sessionStorage.removeItem('adminToken');
+
+                    setTimeout(() => {
+                        dashboardSection.classList.add('hidden');
+                        loginSection.classList.remove('hidden');
+                    }, 3000);
+                }
+            }
+
+            function renderTable(feedbacks) {
+                feedbackTbody.innerHTML = '';
+
+                if (!feedbacks || feedbacks.length === 0) {
+                    feedbackTbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No feedback submissions yet.</td></tr>`;
+                    return;
+                }
+
+                // Escape HTML to prevent XSS attacks when displaying user input
+                const escapeHTML = (str) => {
+                    if (!str) return '';
+                    return str.toString().replace(/[&<>'"]/g,
+                        tag => ({
+                            '&': '&amp;',
+                            '<': '&lt;',
+                            '>': '&gt;',
+                            "'": '&#39;',
+                            '"': '&quot;'
+                        }[tag] || tag)
+                    );
+                };
+
+                feedbacks.forEach(item => {
+                    const tr = document.createElement('tr');
+
+                    // Format the date nicely
+                    const dateObj = new Date(item.created_at);
+                    const formattedDate = dateObj.toLocaleString();
+
+                    tr.innerHTML = `
+                        <td>${item.id || '-'}</td>
+                        <td>${escapeHTML(item.name)}</td>
+                        <td><a href="mailto:${escapeHTML(item.email)}">${escapeHTML(item.email)}</a></td>
+                        <td style="max-width: 300px; word-break: break-word;">${escapeHTML(item.comment)}</td>
+                        <td style="font-size: 0.9em; opacity: 0.8;">${formattedDate}</td>
+                    `;
+                    feedbackTbody.appendChild(tr);
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
