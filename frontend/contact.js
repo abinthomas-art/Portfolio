@@ -46,11 +46,10 @@ document.addEventListener("DOMContentLoaded", () => {
         formMessage.textContent = '';
 
         try {
-           const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
-           const apiUrl = isLocal
-               ? 'http://localhost:3000/api/feedback'
-               : 'https://portfolio-v9v2.onrender.com/api/feedback';
-
+            // Point to the local backend during development and the hosted backend in production.
+            const apiUrl = window.location.hostname === 'localhost'
+              ? 'http://localhost:3000/api/feedback'
+              : 'https://portfolio-v9v2.onrender.com/api/feedback';
             
             const response = await fetch(apiUrl, {
                 method: 'POST',
