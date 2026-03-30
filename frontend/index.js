@@ -1,51 +1,90 @@
-document.addEventListener("DOMContentLoaded", () => {
-    // Initialize Particles.js
-    if (typeof particlesJS !== "undefined") {
-        particlesJS("particles-js", {
-            "particles": {
-                "number": { "value": 50, "density": { "enable": true, "value_area": 800 } },
-                "color": { "value": "#38bdf8" },
-                "shape": { "type": "circle" },
-                "opacity": { "value": 0.3, "random": true },
-                "size": { "value": 3, "random": true },
-                "line_linked": {
-                    "enable": true,
-                    "distance": 150,
-                    "color": "#818cf8",
-                    "opacity": 0.2,
-                    "width": 1
-                },
-                "move": {
-                    "enable": true,
-                    "speed": 1.5,
-                    "direction": "none",
-                    "random": true,
-                    "out_mode": "out"
-                }
-            },
-            "interactivity": {
-                "detect_on": "canvas",
-                "events": {
-                    "onhover": { "enable": true, "mode": "grab" },
-                    "onclick": { "enable": true, "mode": "push" }
-                },
-                "modes": {
-                    "grab": { "distance": 140, "line_linked": { "opacity": 0.8 } },
-                    "push": { "particles_nb": 3 }
-                }
-            },
-            "retina_detect": true
-        });
+const express = require('express');
+const cors = require('cors');
+const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config();
+
+const app = express();
+
+const allowedOrigin = process.env.FRONTEND_URL;
+
+app.use(cors({
+  origin: "*"
+}));
+app.use(express.json());
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+if (!allowedOrigin || !supabaseUrl || !supabaseKey || !process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD) {
+    throw new Error('Missing required environment variables. Check SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_EMAIL, ADMIN_PASSWORD, and FRONTEND_URL.');
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+app.post('/api/feedback', async (req, res) => {
+    const { name, email, comment } = req.body;
+
+    if (!name || !email || !comment) {
+        return res.status(400).json({ error: 'All fields are required.' });
     }
 
-    // Add interactivity to timeline items
-    const timelineItems = document.querySelectorAll('.timeline-item');
-    timelineItems.forEach(item => {
-        item.addEventListener('mouseenter', () => {
-            item.querySelector('.timeline-dot').style.transform = 'scale(1.5)';
-        });
-        item.addEventListener('mouseleave', () => {
-            item.querySelector('.timeline-dot').style.transform = 'scale(1)';
-        });
-    });
+    try {
+        const { data, error } = await supabase
+            .from('feedback')
+            .insert([{ name, email, comment }]);
+
+        if (error) {
+            console.error('Supabase error:', error.message);
+            return res.status(500).json({ error: 'Failed to save feedback to database.' });
+        }
+
+        return res.status(200).json({ message: 'Feedback submitted successfully!', data });
+    } catch (err) {
+        console.error('Server error:', err);
+        return res.status(500).json({ error: 'Internal server error.' });
+    }
 });
+
+app.post('/api/admin/login', (req, res) => {
+    const { email, password } = req.body;
+
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        return res.status(200).json({ success: true, token: 'simple-admin-token' });
+    } else {
+        return res.status(401).json({ error: 'Invalid credentials' });
+    }
+});
+
+app.get('/api/admin/feedback', async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader !== 'Bearer simple-admin-token') {
+        return res.status(401).json({ error: 'Unauthorized access.' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('feedback')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Supabase error:', error.message);
+            return res.status(500).json({ error: 'Failed to fetch feedback.' });
+        }
+
+        return res.status(200).json(data);
+    } catch (err) {
+        console.error('Server error:', err);
+        return res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+if (require.main === module) {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+
+module.exports = app;
