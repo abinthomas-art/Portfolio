@@ -30,6 +30,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnText = submitBtn.querySelector('span');
     const loader = document.getElementById('loader');
     const formMessage = document.getElementById('form-message');
+    const apiUrl = `${window.PORTFOLIO_API_URL}/feedback`;
+
+    async function parseResponse(response) {
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            return response.json();
+        }
+
+        const text = await response.text();
+        return { error: text || 'Unexpected server response.' };
+    }
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -46,11 +57,6 @@ document.addEventListener("DOMContentLoaded", () => {
         formMessage.textContent = '';
 
         try {
-            // Point to the local backend during development and the hosted backend in production.
-            const apiUrl = window.location.hostname === 'localhost'
-              ? 'http://localhost:3000/api/feedback'
-              : 'https://portfolio-v9v2.onrender.com/api/feedback';
-            
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
@@ -59,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: JSON.stringify({ name, email, comment })
             });
 
-            const data = await response.json();
+            const data = await parseResponse(response);
 
             if (response.ok) {
                 formMessage.textContent = 'Thank you! Your feedback has been sent.';
@@ -69,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error(data.error || 'Something went wrong');
             }
         } catch (error) {
-            formMessage.textContent = error.message;
+            formMessage.textContent = error.message || 'Unable to send your message right now.';
             formMessage.classList.add('error');
         } finally {
             // Restore UI state
