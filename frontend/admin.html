@@ -236,9 +236,9 @@
             const errorMsg = document.getElementById('error-msg');
 
             // API URL fallback for local development vs hosted backend.
-            const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            const API_URL = window.location.hostname === 'localhost'
                 ? 'http://localhost:3000/api'
-                : 'https://your-backend.onrender.com/api';
+                : 'https://portfolio-v9v2.onrender.com/api';
 
             // Check if user is already logged in for this session
             if (sessionStorage.getItem('adminToken')) {
