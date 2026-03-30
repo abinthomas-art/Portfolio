@@ -5,27 +5,39 @@ require('dotenv').config();
 
 const app = express();
 
-const allowedOrigin = process.env.FRONTEND_URL;
+const allowedOrigins = (process.env.FRONTEND_URL || '')
+    .split(',')
+    .map((origin) => origin.trim().replace(/\/$/, ''))
+    .filter(Boolean);
 
-app.use(cors({
+const corsOptions = {
     origin(origin, callback) {
-        if (!origin || origin === allowedOrigin || origin === 'http://localhost:3000' || origin === 'http://127.0.0.1:3000') {
+        if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
             return callback(null, true);
         }
 
-        return callback(new Error('Not allowed by CORS'));
-    }
-}));
+        return callback(new Error(`Origin ${origin} is not allowed by CORS.`));
+    },
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-if (!allowedOrigin || !supabaseUrl || !supabaseKey || !process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD) {
+if (!allowedOrigins.length || !supabaseUrl || !supabaseKey || !process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD) {
     throw new Error('Missing required environment variables. Check SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_EMAIL, ADMIN_PASSWORD, and FRONTEND_URL.');
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+app.get('/api/health', (_req, res) => {
+    res.status(200).json({ ok: true });
+});
 
 app.post('/api/feedback', async (req, res) => {
     const { name, email, comment } = req.body;
@@ -86,6 +98,14 @@ app.get('/api/admin/feedback', async (req, res) => {
         console.error('Server error:', err);
         return res.status(500).json({ error: 'Internal server error.' });
     }
+});
+
+app.use((err, _req, res, next) => {
+    if (err && err.message && err.message.includes('not allowed by CORS')) {
+        return res.status(403).json({ error: err.message });
+    }
+
+    return next(err);
 });
 
 if (require.main === module) {
