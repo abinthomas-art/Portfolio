@@ -224,6 +224,7 @@
         </div>
     </div>
 
+    <script src="api-config.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const loginForm = document.getElementById('admin-login-form');
@@ -234,11 +235,17 @@
             const feedbackTbody = document.getElementById('feedback-tbody');
             const loadingMsg = document.getElementById('loading');
             const errorMsg = document.getElementById('error-msg');
+            const API_URL = window.PORTFOLIO_API_URL;
 
-            // API URL fallback for local development vs hosted backend.
-            const API_URL = window.location.hostname === 'localhost'
-                ? 'http://localhost:3000/api'
-                : 'https://portfolio-v9v2.onrender.com/api';
+            async function parseResponse(response) {
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    return response.json();
+                }
+
+                const text = await response.text();
+                return { error: text || 'Unexpected server response.' };
+            }
 
             // Check if user is already logged in for this session
             if (sessionStorage.getItem('adminToken')) {
@@ -260,7 +267,7 @@
                         body: JSON.stringify({ email, password })
                     });
 
-                    const data = await response.json();
+                    const data = await parseResponse(response);
 
                     if (response.ok && data.success) {
                         sessionStorage.setItem('adminToken', data.token);
@@ -302,7 +309,7 @@
                         }
                     });
 
-                    const data = await response.json();
+                    const data = await parseResponse(response);
 
                     if (response.ok) {
                         renderTable(data);
